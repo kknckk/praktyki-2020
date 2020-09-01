@@ -1,0 +1,1 @@
+W tym repozytorium będę umieszczał efekty swojej pracy
