@@ -1,0 +1,29 @@
+// Transposition : {x, y, z} (x == 3, y == 4, z == 32)
+//  => [x][y][z] -> [y][x][z]
+// Transposition state = trans
+//   where trans = transpose state 
+// Wiem, ze to bez sensu, ale to dopiero początek
+rotate : {y ,z} (y == 3, z == 32)
+ => [y][z] -> [y][z]
+rotate column = [a] # [b] # [(column @ 2)]
+  where  a = (column @ 0 <<< 24) : [32]
+         b = (column @ 1 <<< 9) : [32]
+
+TFunction : {y, z} (y == 3, z == 32)
+ => [y][z] -> [y][z]
+TFunction column = [x1] # [y1] # [z1]
+  where x = (column @ 0) : [32]
+        y = (column @ 1) : [32]
+        z = (column @ 2) : [32]
+        x1 = x ^ (z << 1) ^ (( y && z) << 2)
+        y1 = y ^ x ^ ( (x || z) << 1)
+        z1 = z ^ y ^ ((x && y) << 3)
+
+Swap : {y, z} (y == 3, z == 32)
+ => [y][z] -> [y][z]
+Swap column = [x1] # [y] # [z1]
+  where x = (column @ 0) : [32]
+        y = (column @ 1) : [32]
+        z = (column @ 2) : [32]
+        x1 = z 
+        z1 = x
