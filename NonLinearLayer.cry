@@ -1,13 +1,14 @@
-// Transposition : {x, y, z} (x == 3, y == 4, z == 32)
-//  => [x][y][z] -> [y][x][z]
-// Transposition state = trans
-//   where trans = transpose state 
-// Wiem, ze to bez sensu, ale to dopiero początek
-rotate : {y ,z} (y == 3, z == 32)
+Shift : {y ,z} (y == 3, z == 32)
  => [y][z] -> [y][z]
-rotate column = [a] # [b] # [(column @ 2)]
+Shift column = [a] # [b] # [(column @ 2)]
   where  a = (column @ 0 <<< 24) : [32]
          b = (column @ 1 <<< 9) : [32]
+
+ShiftCols : {x, y ,z} (x == 3, y == 4, z == 32)
+ => [x][y][z] -> [x][y][z]
+ShiftCols matrix = transpose Shifted
+  where Tmatrix = transpose matrix
+        Shifted = map (\x -> Shift x) Tmatrix
 
 TFunction : {y, z} (y == 3, z == 32)
  => [y][z] -> [y][z]
@@ -19,11 +20,30 @@ TFunction column = [x1] # [y1] # [z1]
         y1 = y ^ x ^ ( (x || z) << 1)
         z1 = z ^ y ^ ((x && y) << 3)
 
+TFunctionCols : {x, y, z} (x == 3,y == 4, z == 32)
+ => [x][y][z] -> [x][y][z]
+TFunctionCols matrix = transpose output
+  where Tmatrix = transpose matrix
+        output = map (\x -> TFunction x) Tmatrix
+
 Swap : {y, z} (y == 3, z == 32)
  => [y][z] -> [y][z]
-Swap column = [x1] # [y] # [z1]
+Swap column = [newX] # [y] # [newZ]
   where x = (column @ 0) : [32]
         y = (column @ 1) : [32]
         z = (column @ 2) : [32]
-        x1 = z 
-        z1 = x
+        newX = z 
+        newZ = x
+
+SwapCols : {x, y, z} (x == 3, y ==4, z == 32)
+ => [x][y][z] -> [x][y][z]
+SwapCols matrix = transpose output
+  where Tmatrix = transpose matrix
+        output = map (\x -> Swap x) Tmatrix
+
+NonLinearLayer : {x, y, z} (x == 3, y == 4, z == 32)
+ => [x][y][z] -> [x][y][z]
+NonLinearLayer matrix = Swapped
+  where Shifted = ShiftCols matrix
+        Value = TFunctionCols Shifted
+        Swapped = SwapCols Value
