@@ -28,27 +28,19 @@ TFunctionCols matrix = transpose output
   where Tmatrix = transpose matrix
         output = map (\x -> TFunction x) Tmatrix
 
-Swap : {y, z} (y == 3, z == 32)
- => [y][z] -> [y][z]
-Swap column = [newX] # [y] # [newZ]
-  where x = (column @ 0) : [32]
-        y = (column @ 1) : [32]
-        z = (column @ 2) : [32]
-        newX = z 
-        newZ = x
-
-SwapCols : {x, y, z} (x == 3, y ==4, z == 32)
+SwapRows : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
-SwapCols matrix = transpose output
-  where Tmatrix = transpose matrix
-        output = map (\x -> Swap x) Tmatrix
+SwapRows matrix = [Z] # [Y] # [X]
+  where X = matrix @ 0
+        Y = matrix @ 1
+        Z = matrix @ 2
 
 SPbox : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
 SPbox matrix = Swapped
   where Shifted = ShiftCols matrix
         Value = TFunctionCols Shifted
-        Swapped = SwapCols Value
+        Swapped = SwapRows Value
 
 
 //Linear layer
@@ -81,29 +73,28 @@ AddConstant (matrix, r) = [([S00] # (matrix @ 0) @@ [1..3])] # (matrix @@ [1,2])
 
 //Gimli Permutation
 
+NextWord : {x, y, z} (x == 3, y == 4, z == 32)
+ => ([x][y][z], [z]) -> [x][y][z]
+NextWord (state, i) = output
+  where output = if i % 4 == 0 
+                 then AddConstant((SmallSwap (SPbox state)), i)
+                 else if i % 4 == 2 
+                      then BigSwap(SPbox state)
+                      else SPbox state
+
 GimliPermutation : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
-GimliPermutation matrix = output ! 0
-  where SPboxed = SPbox matrix
-        SmallSwaped = SmallSwap SPboxed
-        BigSwaped = BigSwap SPboxed
-        output = map(\r -> if r % 4 == 0 
-                           then AddConstant (SmallSwaped,r)
-                           else if r % 4 == 2 
-                                then BigSwaped
-                                else SPboxed) [24, 23 .. 1]
+GimliPermutation state = output ! 0
+  where output = [state] # [NextWord(x, i) | x <- output
+                                           | i <- [24, 23 .. 1]
+                           ]
 
-
-//Absorb 
+//Absorb
 
 Absorb : {x, y, z} (x == 3, y == 4, z == 32)
  => ([x][y][z], [y][z]) -> [x][y][z]
 Absorb (state, m) = GimliPermutation([first] # state @@ [1, 2])
-  where first = map(\x -> ((state @ 0) @ x) ^ (m @ x)) [0 .. 3]
-
-// AbsorbSeq : {x, y, z, n} (x ==3, y == 4, z == 32, fin n)
-//  => ([x][y][z], [n][y][z]) -> [n][x][y][z]
-// AbsorbSeq (state, seq) = 
+  where first = [x ^ y | x <- state @ 0 | y <- m]
 
 //Squeeze
 
@@ -119,43 +110,61 @@ Squeeze matrix = matrix @ 0
 
 SetState : {x, y, z} (x == 3, y == 4, z == 32)
  => ([y][z], [2][y][z]) -> [x][y][z]
-SetState (nonce, key) = GimliPermutation([nonce] # [key @ 0] # [key @ 1])
+SetState (nonce, key) = GimliPermutation([nonce] # key)
 
 //Process data
 
+// ProcessAD : {x, y, z, n} (x == 3, y == 4, z == 32, fin n)
+//  => ([x][y][z], [n][y][z]) -> [x][y][z]
+// ProcessAD (state, data) = GimliPermutation( Absorb (output, data ! 0) )
+//   where absorbed = map (\s -> Absorb(state, data @ s)) [0 .. n]
+//         temp = absorbed ! 1
+//         firstXored = [0x01000000 ^ ((temp @ 0) @ 0)] # (temp @ 0) @@ [1 .. 3]
+//         lastXored = (temp @ 2) @@ [0 .. 2] # [0x00000001 ^ ((temp @ 2) @ 3)] 
+//         output = [firstXored] # [temp @ 1] # [lastXored]
 ProcessAD : {x, y, z, n} (x == 3, y == 4, z == 32, fin n)
  => ([x][y][z], [n][y][z]) -> [x][y][z]
 ProcessAD (state, data) = GimliPermutation( Absorb (output, data ! 0) )
-  where absorbed = map (\s -> Absorb(state, data @ s)) [0 .. n]
+  where absorbed  = [state] # [Absorb(x, y) | y <- data
+                                            | x <- absorbed
+                              ]
         temp = absorbed ! 1
         firstXored = [0x01000000 ^ ((temp @ 0) @ 0)] # (temp @ 0) @@ [1 .. 3]
         lastXored = (temp @ 2) @@ [0 .. 2] # [0x00000001 ^ ((temp @ 2) @ 3)] 
         output = [firstXored] # [temp @ 1] # [lastXored]
 
 //ProcessPlainText
-KeyXORMess : {y, z} (y == 4, z == 32)
- => ([y][z], [y][z]) -> [y][z]
-KeyXORMess (key, message) = cipher
-  where cipher = map(\i -> key @ i ^ message @ i) [0 .. 3]
 
-ProcessPlaintext : {x, y, z, n} (x == 3, y == 4, z == 32, fin n)
+ProcessPlaintext : {x, y, z, n} (x == 3, y == 4, z == 32, fin n, n >= 1)
  => ([x][y][z], [n][y][z]) -> ([n][y][z], [x][y][z])
 ProcessPlaintext (state, plaintext) = (ciphertext, Absorb(lastState, plaintext ! 0))
-  where states = [Absorb(state, plaintext @ 0)] # [Absorb(x, y) | x <- states
-                                                                | y <- plaintext 
-                                                  ]
+  where states = [state] # [Absorb(x, y) | y <- plaintext
+                                         | x <- states 
+                           ]
+        // states = [Absorb(state, x) | x <- plaintext]
         butLastStates = reverse(tail(reverse states))
-        keys = reverse(tail(reverse[Squeeze state] # [Squeeze x | x <- butLastStates]))
-        cipher = map(\i -> KeyXORMess(keys @ i, plaintext @ i))[0 .. n]
-        ciphertext = take`{n} cipher
-        temp = butLastStates ! 0
+        keys = [Squeeze state] # [Squeeze x | x <- butLastStates]
+        ciphertext = [x ^ y | x <- keys | y <- plaintext]
+        temp = states ! 1
         firstRow = [0x01000000 ^ (temp @ 0) @ 0 ] # (temp @ 0) @@ [1 .. 3]
         lastRow = (temp @ 2) @@ [0 .. 2] # [0x00000001 ^ (temp @ 2) @ 3]
         lastState = [firstRow] # [temp @ 1] # [lastRow]
 
-Encryption : {x, y, z, n} (x == 3, y == 4, z == 32, fin n)
+
+Encryption : {x, y, z, n} (x == 3, y == 4, z == 32, fin n, n >= 1)
  => ([n][y][z], [n][y][z], [y][z], [2][y][z]) -> ([n][y][z], [y][z])
 Encryption (M, AD, N, K) = (C, T)
   where output = ProcessPlaintext(ProcessAD(SetState(N, K), AD), M)
         C = output.0
         T = Squeeze(output.1)
+
+//Decryption
+
+Decryption : {x, y, z, n} (x == 3, y == 4, z == 32, fin n, n >= 1)
+ => ([n][y][z], [n][y][z], [y][z], [2][y][z], [y][z]) -> ([n][y][z], Bit)
+Decryption (C, AD, N, K, T) = (M, Tcheck)
+  where output = Encryption(C, AD, N, K)
+        M = output.0
+        T' = output.1
+        Tcheck = if T == T' then True
+                            else False
