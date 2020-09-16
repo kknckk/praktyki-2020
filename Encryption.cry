@@ -14,13 +14,13 @@ ShiftCols matrix = transpose Shifted
 
 TFunction : {y, z} (y == 3, z == 32)
  => [y][z] -> [y][z]
-TFunction column = [x1] # [y1] # [z1]
+TFunction column = [z1] # [y1] # [x1]
   where x = (column @ 0) : [32]
         y = (column @ 1) : [32]
         z = (column @ 2) : [32]
-        x1 = x ^ (z << 1) ^ (( y && z) << 2)
+        z1 = x ^ (z << 1) ^ (( y && z) << 2)
         y1 = y ^ x ^ ( (x || z) << 1)
-        z1 = z ^ y ^ ((x && y) << 3)
+        x1 = z ^ y ^ ((x && y) << 3)
 
 TFunctionCols : {x, y, z} (x == 3,y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
@@ -28,19 +28,19 @@ TFunctionCols matrix = transpose output
   where Tmatrix = transpose matrix
         output = map (\x -> TFunction x) Tmatrix
 
-SwapRows : {x, y, z} (x == 3, y == 4, z == 32)
- => [x][y][z] -> [x][y][z]
-SwapRows matrix = [Z] # [Y] # [X]
-  where X = matrix @ 0
-        Y = matrix @ 1
-        Z = matrix @ 2
+// SwapRows : {x, y, z} (x == 3, y == 4, z == 32)
+//  => [x][y][z] -> [x][y][z]
+// SwapRows matrix = [Z] # [Y] # [X]
+//   where X = matrix @ 0
+//         Y = matrix @ 1
+//         Z = matrix @ 2
 
 SPbox : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
-SPbox matrix = Swapped
+SPbox matrix = output
   where Shifted = ShiftCols matrix
-        Value = TFunctionCols Shifted
-        Swapped = SwapRows Value
+        output = TFunctionCols Shifted
+
 
 
 //Linear layer
@@ -49,19 +49,19 @@ SmallSwap : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
 SmallSwap matrice = transpose ([second] # [first] # [fourth] # [third])
   where transposed = transpose matrice
-        first = (transposed @ 0) : [3][32]
-        second = (transposed @ 1) : [3][32]
-        third = (transposed @ 2) : [3][32]
-        fourth = (transposed @ 3) : [3][32]
+        first = (transposed @ 0) //: [3][32]
+        second = (transposed @ 1) //: [3][32]
+        third = (transposed @ 2) //: [3][32]
+        fourth = (transposed @ 3) //: [3][32]
 
 BigSwap : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
 BigSwap matrice = transpose ([third] # [fourth] # [first] # [second])
   where transposed = transpose matrice
-        first = (transposed @ 0) : [3][32]
-        second = (transposed @ 1) : [3][32]
-        third = (transposed @ 2) : [3][32]
-        fourth = (transposed @ 3) : [3][32]
+        first = (transposed @ 0)// : [3][32]
+        second = (transposed @ 1)// : [3][32]
+        third = (transposed @ 2)// : [3][32]
+        fourth = (transposed @ 3)// : [3][32]
 
 
 //Add Constant
@@ -69,7 +69,7 @@ BigSwap matrice = transpose ([third] # [fourth] # [first] # [second])
 AddConstant : {x, y, z} (x == 3, y == 4, z == 32) 
  => ([x][y][z], [z]) -> [x][y][z]
 AddConstant (matrix, r) = [([S00] # (matrix @ 0) @@ [1..3])] # (matrix @@ [1,2])
-  where S00 = (0x9e377900 ^ r ^ ((matrix @ 0) @ 0))
+  where S00 = (((matrix @ 0) @ 0) ^ 0x9e377900 ^ r)
 
 //Gimli Permutation
 
@@ -85,8 +85,8 @@ NextWord (state, i) = output
 GimliPermutation : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
 GimliPermutation state = output ! 0
-  where output = [state] # [NextWord(x, i) | x <- output
-                                           | i <- [24, 23 .. 1]
+  where output = [state] # [NextWord(x, i) | i <- [24, 23 .. 1]
+                                           | x <- output
                            ]
 
 //Absorb
@@ -139,7 +139,7 @@ ProcessPlaintext : {x, y, z, n} (x == 3, y == 4, z == 32, fin n, n >= 1)
  => ([x][y][z], [n][y][z]) -> ([n][y][z], [x][y][z])
 ProcessPlaintext (state, plaintext) = (ciphertext, Absorb(lastState, plaintext ! 0))
   where states = [state] # [Absorb(x, y) | y <- plaintext
-                                         | x <- states 
+                                         | x <- states  
                            ]
         // states = [Absorb(state, x) | x <- plaintext]
         butLastStates = reverse(tail(reverse states))
