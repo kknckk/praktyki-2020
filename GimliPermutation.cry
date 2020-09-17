@@ -47,21 +47,19 @@ SPbox matrix = output
 
 SmallSwap : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
-SmallSwap matrice = transpose ([second] # [first] # [fourth] # [third])
-  where transposed = transpose matrice
-        first = (transposed @ 0) //: [3][32]
-        second = (transposed @ 1) //: [3][32]
-        third = (transposed @ 2) //: [3][32]
-        fourth = (transposed @ 3) //: [3][32]
+SmallSwap state = [[second] # [first] # [fourth] # [third]] # state @@ [ 1..2]
+  where first = (state @ 0) @ 0
+        second = (state @ 0) @ 1
+        third = (state @ 0) @ 2
+        fourth = (state @ 0) @ 3
 
 BigSwap : {x, y, z} (x == 3, y == 4, z == 32)
  => [x][y][z] -> [x][y][z]
-BigSwap matrice = transpose ([third] # [fourth] # [first] # [second])
-  where transposed = transpose matrice
-        first = (transposed @ 0)// : [3][32]
-        second = (transposed @ 1)// : [3][32]
-        third = (transposed @ 2)// : [3][32]
-        fourth = (transposed @ 3)// : [3][32]
+BigSwap state = [[third] # [fourth] # [first] # [second]] # state @@[1..2]
+  where first = (state @ 0) @ 0// : [3][32]
+        second = (state @ 0) @ 1// : [3][32]
+        third = (state @ 0) @ 2// : [3][32]
+        fourth = (state @ 0) @ 3// : [3][32]
 
 
 //Add Constant
