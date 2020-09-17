@@ -1,0 +1,27 @@
+# depslib dependency file v1.0
+1600300872 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\nist\kat_aead.c
+	<stdio.h>
+	<string.h>
+	"crypto_aead.h"
+
+1570460700 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\nist\crypto_aead.h
+	"crypto_aead_gimli24v1.h"
+
+1570460700 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\nist\crypto_aead_gimli24v1.h
+
+1600185926 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\gimli\gimli2\main.c
+
+1600303008 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\cipher.c
+	<stdint.h>
+	<string.h>
+	<stdio.h>
+	"crypto_aead.h"
+	"gimli.inc"
+
+1570460700 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\crypto_aead.h
+	"crypto_aead_gimli24v1.h"
+
+1570460700 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\crypto_aead_gimli24v1.h
+
+1570460700 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\ref\gimli.inc
+
