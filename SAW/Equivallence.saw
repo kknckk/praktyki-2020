@@ -1,0 +1,42 @@
+enable_deprecated;
+
+// Allocate a pointer of type 'ty', referring to the value 'v'
+let alloc_init ty v = do {
+  p <- crucible_alloc ty;
+  crucible_points_to p v;
+  return p;
+};
+
+// Allocate a pointer to a fresh symbolic value
+// Returns a pair of the symbolic variable and the pointer
+let ptr_to_fresh n ty = do {
+  x <- crucible_fresh_var n ty;
+  p <- alloc_init ty (crucible_term x);
+  return (x, p);
+};
+
+let i8 = llvm_int 8;
+let i32 = llvm_int 32;
+
+ print "Zaczynamy zabawe";
+ import "Gimli.cry" as Gimli;
+ print "Cryptol zaimportowany";
+ l <- llvm_load_module "cipher.bc";
+
+ print "C zaladowane";
+
+let GimliSetup = do {
+    state <- crucible_alloc (llvm_array 12 i32);
+    crucible_execute_func [state];
+    crucible_points_to state (crucible_term{{:[3][4][32]}});
+};
+
+
+print "Odpalamy weryfikacje";
+time(crucible_llvm_verify l "gimli" [] true (GimliSetup) abc);
+
+// print "cryptol imp <-> c imp";
+// let thm = {{\x c_gimli x == GimliPermutation x}};
+
+// r <- prove abc thm;
+// print r;
