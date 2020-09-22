@@ -1,0 +1,24 @@
+# depslib dependency file v1.0
+1600332406 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\cipher.c
+	<stdint.h>
+	<string.h>
+	<stdio.h>
+	"crypto_aead.h"
+	"gimli.inc"
+
+1600265356 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\crypto_aead.h
+	"crypto_aead_gimli24v1.h"
+
+1600265470 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\crypto_aead_gimli24v1.h
+
+1600291226 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\gimli.inc
+
+1600159331 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\gimli\main.c
+
+1600292427 source:c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\kat_aead.c
+	<stdio.h>
+	<string.h>
+	"crypto_aead.h"
+
+1570460640 c:\users\mateusz\desktop\gimli\gimli\implementations\crypto_aead\gimli24v1\littleendian\api.h
+
